@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Add `onRevalidateError` option to `wrap()` for handling stale-while-revalidate failures
+- Add `keys()` method that returns all non-expired keys with lazy cleanup of expired entries
+- Add `size()` method that returns the number of entries in the store
+
 ## 0.2.3
 
 - Fix npm package name references in README

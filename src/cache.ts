@@ -147,7 +147,11 @@ export function createCache<V = unknown>(options: CacheOptions = {}) {
           revalidating.add(cacheKey);
           fn(...args)
             .then((value) => set(cacheKey, value, opts))
-            .catch(() => {})
+            .catch((err: unknown) => {
+              if (opts?.onRevalidateError) {
+                opts.onRevalidateError(err instanceof Error ? err : new Error(String(err)), cacheKey);
+              }
+            })
             .finally(() => revalidating.delete(cacheKey));
         }
 
@@ -195,5 +199,21 @@ export function createCache<V = unknown>(options: CacheOptions = {}) {
     }
   }
 
-  return { set, get, has, delete: del, clear, invalidateTag, wrap, stats, dump, load };
+  function keys(): string[] {
+    const result: string[] = [];
+    for (const [key, entry] of store) {
+      if (isExpired(entry)) {
+        deleteEntry(key);
+      } else {
+        result.push(key);
+      }
+    }
+    return result;
+  }
+
+  function size(): number {
+    return store.size;
+  }
+
+  return { set, get, has, delete: del, clear, invalidateTag, wrap, stats, dump, load, keys, size };
 }

@@ -13,6 +13,7 @@ export interface WrapOptions {
   ttl?: string | number;
   staleWhileRevalidate?: string | number;
   tags?: string[];
+  onRevalidateError?: (error: Error, key: string) => void;
 }
 
 export interface CacheStats {

@@ -67,9 +67,21 @@ const same = await getUser('123'); // served from cache
 const getUser = cache.wrap(
   'user',
   (id: string) => db.users.findById(id),
-  { ttl: '5m', staleWhileRevalidate: '1m' },
+  {
+    ttl: '5m',
+    staleWhileRevalidate: '1m',
+    onRevalidateError: (err, key) => console.error(`SWR failed for ${key}:`, err),
+  },
 );
 // Serves stale data immediately while refreshing in the background
+// If revalidation fails, onRevalidateError is called instead of silently swallowing the error
+```
+
+### Keys & Size
+
+```ts
+cache.keys();  // ['user:1', 'user:2'] — all non-expired keys (lazy-cleans expired entries)
+cache.size();  // 2 — number of entries in the store
 ```
 
 ### Stats
@@ -100,6 +112,8 @@ cache.load(data);            // restore from JSON
 | `invalidateTag` | `(tag: string) => number` | Remove all entries with the given tag. Returns count removed. |
 | `wrap` | `(keyPrefix, fn, opts?) => (...args) => Promise` | Memoize an async function with cache. |
 | `stats` | `() => CacheStats` | Get hit/miss/size statistics. |
+| `keys` | `() => string[]` | Return all non-expired keys. Lazy-cleans expired entries. |
+| `size` | `() => number` | Return the number of entries in the store. |
 | `dump` | `() => SerializedCache` | Serialize cache contents for persistence. |
 | `load` | `(data: SerializedCache) => void` | Restore cache from serialized data. |
 
@@ -117,6 +131,14 @@ cache.load(data);            // restore from JSON
 | `ttl` | `string \| number` | Time-to-live (e.g. `"5m"`, `60000`). |
 | `tags` | `string[]` | Tags for group invalidation. |
 | `staleWhileRevalidate` | `string \| number` | Window before expiry where stale data is served while refreshing. |
+
+### `WrapOptions`
+
+Extends `SetOptions` with:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `onRevalidateError` | `(error: Error, key: string) => void` | Called when a stale-while-revalidate background refresh fails. If omitted, errors are silently swallowed. |
 
 ### Duration Strings
 
